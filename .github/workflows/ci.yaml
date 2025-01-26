@@ -23,10 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - id: bazel_7
+      - id: bazel_8
         run: echo "bazelversion=$(head -n 1 .bazelversion)" >> $GITHUB_OUTPUT
+      - id: bazel_7
+        run: echo "bazelversion=7.4.1" >> $GITHUB_OUTPUT
       - id: bazel_6
-        run: echo "bazelversion=6.4.0" >> $GITHUB_OUTPUT
+        run: echo "bazelversion=6.5.0" >> $GITHUB_OUTPUT
     outputs:
       # Will look like ["<version from .bazelversion>", "6.4.0"]
       bazelversions: ${{ toJSON(steps.*.outputs.bazelversion) }}
@@ -73,13 +75,20 @@ jobs:
           - os: macos-13
             folder: e2e/assertion
           - os: macos-13
-            bazelversion: 6.4.0
+            bazelversion: 6.5.0
+          - folder: .
+            bazelversion: 6.5.0
+          - folder: .
+            bazelversion: 7.4.1
           # e2e/assertion is bzlmod only but it has test for both cases.
           - folder: e2e/assertion
             bzlmodEnabled: false
           # TODO: fix
           - folder: e2e/wasm
             bzlmodEnabled: true
+          # Don't test the root module with WORKSPACE at all
+          - folder: .
+            bzlmodEnabled: false
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it

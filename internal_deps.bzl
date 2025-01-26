@@ -13,24 +13,6 @@ def http_archive(**kwargs):
 def rules_oci_internal_deps():
     "Fetch deps needed for local development"
 
-    http_archive(
-        name = "io_bazel_rules_go",
-        sha256 = "80a98277ad1311dacd837f9b16db62887702e9f1d1c4c9f796d0121a46c8e184",
-        urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.46.0/rules_go-v0.46.0.zip",
-            "https://github.com/bazelbuild/rules_go/releases/download/v0.46.0/rules_go-v0.46.0.zip",
-        ],
-    )
-
-    http_archive(
-        name = "bazel_gazelle",
-        integrity = "sha256-MpOL2hbmcABjA1R5Bj2dJMYO2o15/Uc5Vj9Q0zHLMgk=",
-        urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.35.0/bazel-gazelle-v0.35.0.tar.gz",
-            "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.35.0/bazel-gazelle-v0.35.0.tar.gz",
-        ],
-    )
-
     # Override bazel_skylib distribution to fetch sources instead
     # so that the gazelle extension is included
     # see https://github.com/bazelbuild/bazel-skylib/issues/250
@@ -54,17 +36,4 @@ def rules_oci_internal_deps():
         name = "io_bazel_stardoc",
         sha256 = "62bd2e60216b7a6fec3ac79341aa201e0956477e7c8f6ccc286f279ad1d96432",
         urls = ["https://github.com/bazelbuild/stardoc/releases/download/0.6.2/stardoc-0.6.2.tar.gz"],
-    )
-
-    http_archive(
-        name = "rules_multirun",
-        sha256 = "0e124567fa85287874eff33a791c3bbdcc5343329a56faa828ef624380d4607c",
-        url = "https://github.com/keith/rules_multirun/releases/download/0.9.0/rules_multirun.0.9.0.tar.gz",
-    )
-
-    http_archive(
-        name = "rules_python",
-        sha256 = "be04b635c7be4604be1ef20542e9870af3c49778ce841ee2d92fcb42f9d9516a",
-        strip_prefix = "rules_python-0.35.0",
-        url = "https://github.com/bazelbuild/rules_python/releases/download/0.35.0/rules_python-0.35.0.tar.gz",
     )

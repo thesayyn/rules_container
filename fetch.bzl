@@ -6,8 +6,8 @@ by writing them to a generated macro in a .bzl file.
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@rules_oci//oci:pull.bzl", "oci_pull")
-load("//examples:setup_assertion_repos.bzl", "setup_assertion_repos")
-load("//examples/dockerfile:buildx.bzl", "fetch_buildx")
+load("//examples:setup_assertion_repos.bzl", "configure_docker")
+load("//examples/dockerfile:buildx.bzl", "configure_buildx")
 
 def fetch_images():
     "fetch external images"
@@ -225,6 +225,7 @@ genrule(
         sha256 = "d7c7af5d86f43a885069408a89788f67f248e8124c682bb73936f33874e0611b",
     )
 
+# buildifier: disable=unnamed-macro
 def fetch_test_repos():
     "fetch repos needed for testing"
 
@@ -242,10 +243,8 @@ def fetch_test_repos():
         path = "examples/assertion/attest_external/workspace",
     )
 
+    # Setup buildx
+    configure_buildx(name = "configure_buildx")
 
-    # Fetch buildx
-    fetch_buildx()
-
-    # Fetch necessary repos for docker testing
-    setup_assertion_repos()
-
+    # Setup steps for docker testing
+    configure_docker(name = "docker_configure")

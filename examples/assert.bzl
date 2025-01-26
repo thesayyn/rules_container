@@ -108,11 +108,7 @@ def assert_oci_config(
             "$(location %s)" % expected,
             "$(location %s)" % actual,
         ],
-        src = select({
-            "//examples:platform_darwin_arm64": "@jd_darwin_arm64//file",
-            "//examples:platform_linux_amd64": "@jd_linux_amd64//file",
-            "//examples:platform_darwin_amd64": "@jd_darwin_amd64//file",
-        }),
+        src = "@multitool//tools/jd",
         out = name,
     )
 
@@ -140,7 +136,7 @@ def assert_oci_image_command(
         name = name + "_gen",
         output_to_bindir = True,
         cmd = """
-docker=$(location //examples:docker_cli)
+docker=$(location @multitool//tools/docker)
 $(location :{name}_tarball)
 container_id=$$($$docker run -d {docker_args})
 $$docker wait $$container_id > $(location :{name}_exit_code)
@@ -152,7 +148,7 @@ $$docker logs $$container_id > $(location :{name}_output)
             name + "_exit_code",
         ],
         target_compatible_with = TARGET_COMPATIBLE_WITH,
-        tools = [name + "_tarball", "//examples:docker_cli"],
+        tools = [name + "_tarball", "@multitool//tools/docker"],
     )
 
     if output_eq:

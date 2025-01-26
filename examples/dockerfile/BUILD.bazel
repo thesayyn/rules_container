@@ -1,18 +1,7 @@
 load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
-load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@configure_buildx//:defs.bzl", "BUILDER_NAME", "TARGET_COMPATIBLE_WITH")
 load("@rules_oci//oci:defs.bzl", "oci_image")
 load("//examples:assert.bzl", "assert_oci_config", "assert_oci_image_command")
-
-native_binary(
-    name = "buildx",
-    src = select({
-        "@bazel_tools//src/conditions:linux_x86_64": "@buildx_linux_amd64//file",
-        "@bazel_tools//src/conditions:darwin_arm64": "@buildx_darwin_arm64//file",
-        "@bazel_tools//src/conditions:darwin_x86_64": "@buildx_darwin_amd64//file",
-    }),
-    out = "buildx",
-)
 
 # docker buildx create --name container --driver=docker-container
 run_binary(
@@ -29,7 +18,7 @@ run_binary(
     mnemonic = "BuildDocker",
     out_dirs = ["base"],
     target_compatible_with = TARGET_COMPATIBLE_WITH,
-    tool = ":buildx",
+    tool = "@multitool//tools/buildx",
 )
 
 oci_image(

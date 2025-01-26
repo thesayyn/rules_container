@@ -1,10 +1,10 @@
 "repos for buildx"
 
 load("@aspect_bazel_lib//lib:repo_utils.bzl", "repo_utils")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 def _impl_configure_buildx(rctx):
     has_docker = False
+
     # See if standard docker sock exists
     if not has_docker:
         r = rctx.execute(["stat", "/var/run/docker.sock"])
@@ -14,7 +14,17 @@ def _impl_configure_buildx(rctx):
     compatible_with = "[]"
     builder_name = "builder-docker"
     if has_docker:
-        buildx = rctx.path(Label("@buildx_%s//file:downloaded" % repo_utils.platform(rctx)))
+        # TODO(alex): a less hacky way for a repo rule to find this transitive repo label?
+        if repo_utils.platform(rctx) == "darwin_amd64":
+            multitool_label = "@@rules_multitool~~multitool~multitool.macos_x86_64//tools/buildx:macos_x86_64_executable"
+        elif repo_utils.platform(rctx) == "darwin_arm64":
+            multitool_label = "@@rules_multitool~~multitool~multitool.macos_arm64//tools/buildx:macos_arm64_executable"
+        elif repo_utils.platform(rctx) == "linux_amd64":
+            multitool_label = "@@rules_multitool~~multitool~multitool.linux_x86_64//tools/buildx:linux_x86_64_executable"
+        else:
+            fail("platform {} is not known", repo_utils.platform(rctx))
+
+        buildx = rctx.path(Label(multitool_label))
 
         r = rctx.execute([buildx, "ls"])
         if not builder_name in r.stdout:
@@ -40,33 +50,3 @@ configure_buildx = repository_rule(
     implementation = _impl_configure_buildx,
     local = True,
 )
-
-def fetch_buildx():
-    http_file(
-        name = "buildx_linux_amd64",
-        urls = [
-            "https://github.com/docker/buildx/releases/download/v0.14.0/buildx-v0.14.0.linux-amd64",
-        ],
-        integrity = "sha256-Mvjxfso1vy7+bA5H9A5Gkqh280UxtCHvyYR5mltBIm4=",
-        executable = True,
-    )
-
-    http_file(
-        name = "buildx_darwin_arm64",
-        urls = [
-            "https://github.com/docker/buildx/releases/download/v0.14.0/buildx-v0.14.0.darwin-arm64",
-        ],
-        integrity = "sha256-3BdvI2ZgnMITKubwi7IZOjL5/ZNUv9Agz3+juNt0hA0=",
-        executable = True,
-    )
-
-    http_file(
-        name = "buildx_darwin_amd64",
-        urls = [
-            "https://github.com/docker/buildx/releases/download/v0.14.0/buildx-v0.14.0.darwin-amd64",
-        ],
-        integrity = "sha256-J6rZfENSvCzFBHDgnA8Oqq2FDXR+M9CTejhhg9DruPU=",
-        executable = True,
-    )
-
-    configure_buildx(name = "configure_buildx")
