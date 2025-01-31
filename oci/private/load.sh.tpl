@@ -28,6 +28,5 @@ mtree_contents="$(cat $MTREE)"
 mtree_contents="${mtree_contents//"$image_root"/}"
 mtree_contents="${mtree_contents//"$manifest_root"/}"
 
-"$CONTAINER_CLI" load --input <(
-    "$TAR" --cd "$RUNFILES_DIR/{{workspace_name}}" --create --no-xattr --no-mac-metadata @- <<< "$mtree_contents"
-)
+"$TAR" --cd "$RUNFILES_DIR/{{workspace_name}}" --create --no-xattr --no-mac-metadata @- <<< "$mtree_contents" | \
+    "$CONTAINER_CLI" load
