@@ -168,7 +168,7 @@ for ARG in "$@"; do
     CONFIG=$(jq --arg workdir "${ARG#--workdir=}" '.config.WorkingDir = $workdir' <<<"$CONFIG")
     ;;
   --labels=*)
-    CONFIG=$(jq --rawfile labels "${ARG#--labels=}" '.config.Labels += ($labels | split("\n") | map(select(. | length > 0)) | map(. | split("=")) | map({key: .[0], value: .[1:] | join("=")}) | from_entries)' <<<"$CONFIG")
+    CONFIG=$(jq --rawfile labels "${ARG#--labels=}" '.config.Labels = ($labels | split("\n") | map(select(. | length > 0)) | map(. | split("=")) | map({key: .[0], value: .[1:] | join("=")}) | from_entries)' <<<"$CONFIG")
     ;;
   --created=*)
     CONFIG=$(jq --rawfile created "${ARG#--created=}" '.created = $created' <<<"$CONFIG")
