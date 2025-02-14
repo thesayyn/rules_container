@@ -224,6 +224,23 @@ def _platform_triplet(platform_str):
         architecture, _, variant = architecture.partition("/")
     return os, architecture, variant
 
+# Helper rule for ensuring that the crane and yq toolchains are actually
+# resolved for the architecture we are targeting.
+def _transition_to_target_impl(settings, _attr):
+    return {
+        # String conversion is needed to prevent a crash with Bazel 6.x.
+        "//command_line_option:extra_execution_platforms": [
+            str(platform)
+            for platform in settings["//command_line_option:platforms"]
+        ],
+    }
+
+_transition_to_target = transition(
+    implementation = _transition_to_target_impl,
+    inputs = ["//command_line_option:platforms"],
+    outputs = ["//command_line_option:extra_execution_platforms"],
+)
+
 util = struct(
     parse_image = _parse_image,
     sha256 = _sha256,
@@ -234,4 +251,5 @@ util = struct(
     build_manifest_json = _build_manifest_json,
     assert_crane_version_at_least = _assert_crane_version_at_least,
     platform_triplet = _platform_triplet,
+    transition_to_target = _transition_to_target,
 )

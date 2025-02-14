@@ -131,12 +131,19 @@ attrs = {
     "_tarball_sh": attr.label(allow_single_file = True, default = "//oci/private:tarball.sh.tpl"),
     "_runfiles": attr.label(default = "@bazel_tools//tools/bash/runfiles"),
     "_windows_constraint": attr.label(default = "@platforms//os:windows"),
+    "_allowlist_function_transition": attr.label(
+        default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+    ),
+    "_tar": attr.label(
+        cfg = util.transition_to_target,
+        default = "@bsd_tar_toolchains//:resolved_toolchain",
+    ),
 }
 
 def _load_impl(ctx):
     jq = ctx.toolchains["@aspect_bazel_lib//lib:jq_toolchain_type"]
     coreutils = ctx.toolchains["@aspect_bazel_lib//lib:coreutils_toolchain_type"]
-    bsdtar = ctx.toolchains["@aspect_bazel_lib//lib:tar_toolchain_type"]
+    bsdtar = ctx.attr._tar[0][platform_common.ToolchainInfo]
 
     image = ctx.file.image
     repo_tags = ctx.file.repo_tags
