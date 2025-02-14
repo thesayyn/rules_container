@@ -6,13 +6,10 @@ ENV LC_ALL=C.UTF-8 \
     LANG=C.UTF-8 \
     LANGUAGE=C.UTF-8
 
-RUN apt-get -y update \
-    && apt-get -y install jq \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+ADD /app /app
 
-RUN pip install cowsay
+WORKDIR /app
 
-COPY src /app
+RUN pip install --root-user-action=ignore -r requirements.txt
 
-CMD ["/app/say.py"]
+CMD ["/app/src/say.py"]

@@ -1,3 +1,4 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
 load("@configure_buildx//:defs.bzl", "BUILDER_NAME", "TARGET_COMPATIBLE_WITH")
 load("@rules_oci//oci:defs.bzl", "oci_image")
@@ -63,6 +64,104 @@ assert_oci_image_command(
     ],
     exit_code_eq = 0,
     image = ":image",
+    output_eq = """\
+  ____
+| moo! |
+  ====
+    \\
+     \\
+       ^__^
+       (oo)\\_______
+       (__)\\       )\\/\\
+           ||----w |
+           ||     ||
+""",
+)
+
+# This tar can be arranged in arbitrary ways.
+# For example, one could grab pkg_files from elsewhere in the workspace.
+# Anything in the tar can be used by a Dockerfile ADD or COPY.
+mtree_spec(
+    name = "buildx_context_tree",
+    srcs = [
+        "context.Dockerfile",
+        "requirements.txt",
+    ] + glob([
+        "src/*",
+    ]),
+)
+
+mtree_mutate(
+    name = "buildx_context_tree_prefixed",
+    mtree = ":buildx_context_tree",
+    strip_prefix = package_name(),
+    package_dir = "app",
+)
+
+tar(
+    name = "buildx_context",
+    mtree = ":buildx_context_tree_prefixed",
+    srcs = [
+        "context.Dockerfile",
+        "requirements.txt",
+    ] + glob([
+        "src/*",
+    ]),
+)
+
+# In order to use a local tar as a context, we must pipe the tar into the BuildX binary
+# This is a bash operation, so we must wrap the BuildX tool in an sh_binary that does this for us
+sh_binary(
+    name = "buildx_wrapper",
+    srcs = [
+        "buildx_wrapper.sh",
+    ],
+)
+
+# This is similar to :base except it uses a tar file as a Docker context
+run_binary(
+    name = "base_context",
+    tool = ":buildx_wrapper",
+    out_dirs = [ "base_context" ],
+    srcs = [
+        ":buildx_context",
+        ":buildx",
+    ],
+    env = {
+        "BUILDX": "$(location :buildx)",
+        "BUILDER_NAME": BUILDER_NAME,
+        "OUTPUT_DIR": "$@",
+        "BUILDX_CONTEXT": "$(location :buildx_context)",
+        "DOCKER_FILE": "/app/context.Dockerfile",
+        "PLATFORM": "linux/amd64",
+    },
+    execution_requirements = {
+        "local": "1",
+        "requires-network": "1",
+    },
+    target_compatible_with = TARGET_COMPATIBLE_WITH,
+)
+
+oci_image(
+    name = "image_context",
+    base = ":base_context",
+)
+
+assert_oci_config(
+    name = "assert_metadata_context",
+    cmd_eq = ["/app/src/say.py"],
+    entrypoint_eq = None,
+    image = ":image_context",
+)
+
+assert_oci_image_command(
+    name = "assert_cow_says_moo_context",
+    args = [
+        "python",
+        "/app/src/say.py",
+    ],
+    exit_code_eq = 0,
+    image = ":image_context",
     output_eq = """\
   ____
 | moo! |
