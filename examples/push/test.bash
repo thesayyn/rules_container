@@ -9,10 +9,10 @@ readonly PUSH_IMAGE_WO_TAGS="$5"
 
 # start a registry
 output=$(mktemp)
-$CRANE registry serve --address=localhost:0 >> $output 2>&1 &
+$CRANE registry serve --address=localhost:0 >> "$output" 2>&1 &
 timeout=$((SECONDS+10))
 while [ "${SECONDS}" -lt "${timeout}" ]; do
-    port="$(cat $output | sed -nr 's/.+serving on port ([0-9]+)/\1/p')"
+    port="$(sed -nr 's/.+serving on port ([0-9]+)/\1/p' < "$output")"
     [ -n "${port}" ] && break
 done
 REGISTRY="localhost:$port"
@@ -53,5 +53,12 @@ TAGS=$("${CRANE}" ls "$REPOSITORY")
 if [ "${TAGS}" != "custom" ]; then 
     echo "image is supposed to have custom tag but got"
     echo "${TAGS}"
+    exit 1
+fi
+
+# should fail since retry_count reached, since there is no repo
+REPOSITORY="non-existing-repository"
+if timeout 3 "${PUSH_IMAGE}" --repository "${REPOSITORY}" --retry_count 1; then
+    echo "push didn't return in 3 seconds, potentially stuck?"
     exit 1
 fi

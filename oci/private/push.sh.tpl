@@ -7,6 +7,22 @@ readonly IMAGE_DIR="{{image_dir}}"
 readonly TAGS_FILE="{{tags}}"
 readonly FIXED_ARGS=({{fixed_args}})
 readonly REPOSITORY_FILE="{{repository_file}}"
+readonly RETRY_COUNT="{{retry_count}}"
+
+function retry {
+  local retries=$1
+  shift
+
+  local count=0
+  until "$@"; do
+    exit=$?
+    count=$(($count + 1))
+    if [ $count -ge $retries ]; then
+      return $exit
+    fi
+  done
+  return 0
+}
 
 REPOSITORY=""
 if [ -f $REPOSITORY_FILE ] ; then
@@ -59,13 +75,15 @@ done
 DIGEST=$("${JQ}" -r '.manifests[0].digest' "${IMAGE_DIR}/index.json")
 
 REFS=$(mktemp)
-"${CRANE}" push "${GLOBAL_FLAGS[@]+"${GLOBAL_FLAGS[@]}"}" "${IMAGE_DIR}" "${REPOSITORY}@${DIGEST}" "${ARGS[@]+"${ARGS[@]}"}" --image-refs "${REFS}"
+
+retry RETRY_COUNT "${CRANE}" push "${GLOBAL_FLAGS[@]+"${GLOBAL_FLAGS[@]}"}" "${IMAGE_DIR}" "${REPOSITORY}@${DIGEST}" "${ARGS[@]+"${ARGS[@]}"}" --image-refs "${REFS}"
+
 
 for tag in "${TAGS[@]+"${TAGS[@]}"}"
 do
-  "${CRANE}" tag "${GLOBAL_FLAGS[@]+"${GLOBAL_FLAGS[@]}"}" $(cat "${REFS}") "${tag}"
+  retry RETRY_COUNT "${CRANE}" tag "${GLOBAL_FLAGS[@]+"${GLOBAL_FLAGS[@]}"}" $(cat "${REFS}") "${tag}"
 done
 
 if [[ -e "${TAGS_FILE:-}" ]]; then
-  cat "${TAGS_FILE}" | xargs -r -n1 "${CRANE}" tag "${GLOBAL_FLAGS[@]+"${GLOBAL_FLAGS[@]}"}" $(cat "${REFS}")
+  retry RETRY_COUNT cat "${TAGS_FILE}" | xargs -r -n1 "${CRANE}" tag "${GLOBAL_FLAGS[@]+"${GLOBAL_FLAGS[@]}"}" $(cat "${REFS}")
 fi

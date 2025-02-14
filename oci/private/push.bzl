@@ -180,6 +180,10 @@ _attrs = {
         """,
         allow_single_file = True,
     ),
+    "retry_count": attr.int(
+        doc = "A number of retry(s) for push and tag",
+        default = 0,
+    ),
     "_allowlist_function_transition": attr.label(
         default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
     ),
@@ -214,6 +218,9 @@ def _impl(ctx):
     _, _, _, maybe_digest, maybe_tag = util.parse_image(ctx.attr.repository)
     if maybe_digest or maybe_tag:
         fail("`repository` attribute should not contain digest or tag. got: {}".format(ctx.attr.repository))
+
+    if ctx.attr.retry_count < 0 or ctx.attr.retry_count % 1 != 0:
+        fail("`retry_count` attribute should be natural number and non-negative")
 
     executable = ctx.actions.declare_file("push_%s.sh" % ctx.label.name)
     files = [ctx.file.image]
