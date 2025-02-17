@@ -124,6 +124,13 @@ printed to `stdout` by the external program.
 For more information about the credential helpers checkout the [documentation](https://github.com/bazelbuild/proposals/blob/main/designs/2022-06-07-bazel-credential-helpers.md).
 
 See the [examples/credential_helper](/examples/credential_helper/auth.sh) directory for an example of how this work.
+
+When using a credential helper, it may be desirable to allow the built-in credential handling to fail. This can be achieved by setting the `$OCI_GET_TOKEN_ALLOW_FAIL` repo env:
+
+.bazelrc
+```
+common --repo_env=OCI_GET_TOKEN_ALLOW_FAIL=1
+```
 """
 
 load("//oci/private:pull.bzl", "oci_alias", _oci_pull = "oci_pull")

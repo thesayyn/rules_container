@@ -127,6 +127,13 @@ For more information about the credential helpers checkout the [documentation](h
 
 See the [examples/credential_helper](/examples/credential_helper/auth.sh) directory for an example of how this work.
 
+When using a credential helper, it may be desirable to allow the built-in credential handling to fail. This can be achieved by setting the `$OCI_GET_TOKEN_ALLOW_FAIL` repo env:
+
+.bazelrc
+```
+common --repo_env=OCI_GET_TOKEN_ALLOW_FAIL=1
+```
+
 <a id="oci_pull"></a>
 
 ## oci_pull

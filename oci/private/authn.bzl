@@ -280,6 +280,7 @@ To enable this feature, add `common --repo_env=OCI_ENABLE_OAUTH2_SUPPORT=1` to t
 """
 
 def _get_token(rctx, state, registry, repository):
+    allow_fail = rctx.os.environ.get("OCI_GET_TOKEN_ALLOW_FAIL") != None
     pattern = _get_auth(rctx, state, registry)
 
     for registry_pattern in _WWW_AUTH.keys():
@@ -298,6 +299,8 @@ def _get_token(rctx, state, registry, repository):
             auth = None
             if pattern.get("login", None) == "<token>":
                 if not rctx.os.environ.get("OCI_ENABLE_OAUTH2_SUPPORT"):
+                    if allow_fail:
+                        return {}
                     fail(IDENTITY_TOKEN_WARNING)
 
                 response = _oauth2(
@@ -314,13 +317,16 @@ def _get_token(rctx, state, registry, repository):
                     executable = False,
                 )
             else:
-                rctx.download(
+                result = rctx.download(
                     url = [url],
                     output = "www-authenticate.json",
                     # optionally, sending the credentials to authenticate using the credentials.
                     # this is for fetching from private repositories that require WWW-Authenticate
                     auth = {url: pattern},
+                    allow_fail = allow_fail,
                 )
+                if allow_fail and not result.success:
+                    return {}
 
             auth_raw = rctx.read("www-authenticate.json")
             auth = json.decode(auth_raw)
@@ -331,6 +337,8 @@ def _get_token(rctx, state, registry, repository):
             if "access_token" in auth:
                 token = auth["access_token"]
             if token == "":
+                if allow_fail:
+                    return {}
                 fail("could not find token in neither field 'token' nor 'access_token' in the response from the registry")
             pattern = {
                 "type": "pattern",
