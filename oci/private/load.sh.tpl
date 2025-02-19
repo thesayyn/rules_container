@@ -8,6 +8,7 @@ runfiles_export_envvars
 readonly TAR="$(rlocation "{{tar}}")"
 readonly MTREE="$(rlocation "{{mtree_path}}")"
 readonly LOADER="$(rlocation "{{loader}}")"
+readonly JQ="$(rlocation "{{jq_path}}")"
 
 if [ -f "$LOADER" ]; then
     CONTAINER_CLI="$LOADER"

@@ -129,6 +129,7 @@ attrs = {
         allow_single_file = True,
     ),
     "_tarball_sh": attr.label(allow_single_file = True, default = "//oci/private:tarball.sh.tpl"),
+    "_image_id_sh": attr.label(allow_single_file = True, default = "//oci/private:image_id.sh.tpl"),
     "_runfiles": attr.label(default = "@bazel_tools//tools/bash/runfiles"),
     "_windows_constraint": attr.label(default = "@platforms//os:windows"),
 }
@@ -143,6 +144,7 @@ def _load_impl(ctx):
 
     mtree_spec = ctx.actions.declare_file("{}/tarball.spec".format(ctx.label.name))
     executable = ctx.actions.declare_file("{}/load.sh".format(ctx.label.name))
+    image_id_sh = ctx.actions.declare_file("{}/image_id.sh".format(ctx.label.name))
     manifest_json = ctx.actions.declare_file("{}/manifest.json".format(ctx.label.name))
 
     # Represents either manifest.json or index.json depending on the image format
@@ -180,6 +182,32 @@ def _load_impl(ctx):
             coreutils.coreutils_info.bin,
         ],
         mnemonic = "OCITarballManifest",
+    )
+    ctx.actions.expand_template(
+        template = ctx.file._image_id_sh,
+        output = image_id_sh,
+        is_executable = True,
+        substitutions = {
+            "{{jq_path}}": jq.jqinfo.bin.path,
+        },
+    )
+    image_id = ctx.actions.declare_file("{}/image_id.txt".format(ctx.label.name))
+    image_id_args = ctx.actions.args()
+    image_id_args.add(manifest_json)
+    image_id_args.add(image_id)
+    ctx.actions.run(
+        executable = image_id_sh,
+        inputs = [manifest_json],
+        outputs = [image_id],
+        arguments = [image_id_args],
+        tools = [
+            jq.jqinfo.bin,
+        ],
+        env = {
+            "MANIFEST_JSON_PATH": manifest_json.path,
+            "OUTPUT_PATH": image_id.path,
+        },
+        mnemonic = "ImageId",
     )
 
     # This action produces a large output and should rarely be used as it puts load on the cache.
@@ -228,6 +256,7 @@ def _load_impl(ctx):
         DefaultInfo(
             runfiles = runfiles,
             executable = runnable_loader,
+            files = depset([image_id]),
         ),
         OutputGroupInfo(tarball = depset([tarball])),
     ]
