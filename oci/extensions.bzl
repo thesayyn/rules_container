@@ -46,8 +46,6 @@ def _oci_extension(module_ctx):
             if mod.is_root:
                 deps = root_direct_dev_deps if module_ctx.is_dev_dependency(pull) else root_direct_deps
                 deps.append(pull.name)
-                for platform in pull.platforms:
-                    deps.append("_".join([pull.name] + platform.split("/")))
 
         for toolchains in mod.tags.toolchains:
             if toolchains.name != "oci" and not mod.is_root:
